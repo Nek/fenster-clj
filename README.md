@@ -1,4 +1,4 @@
-# Clojure + Fenster (JNI) + GraalVM
+## Clojure + Fenster (JNI) + GraalVM
 
 Why JNI (not Panama/FFM)? On Apple Silicon, the GraalVM Native Image toolchain you’re likely using does not support the Foreign Function & Memory (FFM) API in native images for arm64 in a way that works here. JNI is stable on arm64 and works today.
 
@@ -11,6 +11,16 @@ Why JNI (not Panama/FFM)? On Apple Silicon, the GraalVM Native Image toolchain y
 - GraalVM JDK 24 with `native-image` installed
 - Clojure CLI (`clj` / `clojure`)
 - `curl`
+
+## Screenshots
+
+`demo/fenhouse.clj`
+
+<img width="432" height="380" alt="image" src="https://github.com/user-attachments/assets/d311e271-e2b9-4024-9369-f97d7eb27c37" />
+
+`demo/sound.clj` (it makes some noise)
+
+<img width="432" height="380" alt="image" src="https://github.com/user-attachments/assets/18d33ae1-4f3b-4ff2-ac0d-86e80ac3a0bf" />
 
 ---
 
