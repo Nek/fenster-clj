@@ -4,6 +4,9 @@ Why JNI (not Panama/FFM)? On Apple Silicon, the GraalVM Native Image toolchain y
 
 ## Disclaimer
 
+It's macOS only for now. I haven't tested it anywhere else.
+
+
 I don't know C and have used AI to pull this demo together. Still, it looks like a good proof of concept. I learned a lot creating it.
 
 ## Requirements
