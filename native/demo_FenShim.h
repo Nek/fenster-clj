@@ -55,6 +55,38 @@ JNIEXPORT void JNICALL Java_demo_FenShim_fenSleep
 JNIEXPORT jlong JNICALL Java_demo_FenShim_fenTime
   (JNIEnv *, jclass);
 
+/*
+ * Class:     demo_FenShim
+ * Method:    fenAudioOpen
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_demo_FenShim_fenAudioOpen
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     demo_FenShim
+ * Method:    fenAudioAvail
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_demo_FenShim_fenAudioAvail
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     demo_FenShim
+ * Method:    fenAudioWrite
+ * Signature: (JLjava/nio/FloatBuffer;I)V
+ */
+JNIEXPORT void JNICALL Java_demo_FenShim_fenAudioWrite
+  (JNIEnv *, jclass, jlong, jobject, jint);
+
+/*
+ * Class:     demo_FenShim
+ * Method:    fenAudioClose
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_demo_FenShim_fenAudioClose
+  (JNIEnv *, jclass, jlong);
+
 #ifdef __cplusplus
 }
 #endif

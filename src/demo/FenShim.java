@@ -1,48 +1,45 @@
 package demo;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public final class FenShim {
 
     static {
-        // 1) Try normal library path (works on JVM + when lib is beside the binary)
+        // Try normal lookup first…
         try {
             System.loadLibrary("fen_shim_jni");
-        } catch (UnsatisfiedLinkError e1) {
-            // 2) Fallback: extract the bundled resource from the image/JAR
-            String res = "native/libfen_shim_jni.dylib";
-            try (
-                InputStream in =
-                    FenShim.class.getClassLoader().getResourceAsStream(res)
-            ) {
-                if (in == null) throw new UnsatisfiedLinkError(
-                    "Missing resource: " + res
-                );
-                Path tmp = Files.createTempFile("fen_shim_jni", ".dylib");
-                Files.copy(in, tmp, REPLACE_EXISTING);
-                tmp.toFile().deleteOnExit();
-                System.load(tmp.toAbsolutePath().toString());
-            } catch (Exception e2) {
-                UnsatisfiedLinkError ule = new UnsatisfiedLinkError(
-                    "Failed to load fen_shim_jni"
-                );
-                ule.addSuppressed(e1);
-                ule.addSuppressed(e2);
-                throw ule;
+        } catch (UnsatisfiedLinkError primary) {
+            // …fallback to loading our bundled resource
+            try {
+                String res = "native/libfen_shim_jni.dylib";
+                try (
+                    InputStream in =
+                        FenShim.class.getClassLoader().getResourceAsStream(res)
+                ) {
+                    if (in == null) throw new IOException(
+                        "resource not found: " + res
+                    );
+                    Path tmp = Files.createTempFile("fen_", ".dylib");
+                    Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+                    System.load(tmp.toAbsolutePath().toString());
+                    tmp.toFile().deleteOnExit();
+                }
+            } catch (Exception e) {
+                throw primary;
             }
         }
     }
 
-    private FenShim() {}
-
+    // ---- window ----
     public static native long fenOpen(
-        int width,
-        int height,
+        int w,
+        int h,
         String title,
         ByteBuffer pixelBuf
     );
@@ -53,7 +50,22 @@ public final class FenShim {
 
     public static native int fenKey(long handle, int code);
 
-    public static native void fenSleep(int ms);
+    public static native void fenSleep(int ms); // <-- CHANGED to int
 
     public static native long fenTime();
+
+    // ---- audio ----
+    public static native long fenAudioOpen(); // returns audio handle
+
+    public static native int fenAudioAvail(long audioHandle); // frames available (non-blocking)
+
+    public static native void fenAudioWrite(
+        long audioHandle,
+        FloatBuffer buf,
+        int nFrames
+    );
+
+    public static native void fenAudioClose(long audioHandle);
+
+    private FenShim() {}
 }

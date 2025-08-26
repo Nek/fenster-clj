@@ -5,3 +5,5 @@ FenHouse.app
 resources/native/
 native/libfen_shim_jni.dylib
 fenhouse
+native/fenster.h
+native/fenster_audio.h

@@ -1,12 +1,18 @@
 {:paths ["src" "resources"]
 
- :deps  {org.clojure/clojure {:mvn/version "1.12.2"}
+ :deps {org.clojure/clojure {:mvn/version "1.12.2"}
         com.github.clj-easy/graal-build-time {:mvn/version "1.0.5"}}
 
  :aliases
- {:run   {:extra-paths ["target/classes"]       ;; <-- add this
-          :jvm-opts    ["-XstartOnFirstThread" "-Djava.library.path=./native"]
-          :main-opts   ["-m" "demo.fenhouse"]}
+ {:build
+  {:deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}}
+   :ns-default build}
 
-  :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}}
-          :ns-default build}}}
+  ;; JVM run aliases (include compiled Java + AOT classes)
+  :run        {:extra-paths ["target/classes"]
+               :jvm-opts ["-XstartOnFirstThread"]
+               :main-opts ["-m" "demo.fenhouse"]}
+
+  :run-sound  {:extra-paths ["target/classes"]
+               :jvm-opts ["-XstartOnFirstThread"]
+               :main-opts ["-m" "demo.sound"]}}}
