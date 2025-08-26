@@ -1,4 +1,4 @@
-{:paths ["src"]
+{:paths ["src" "resources"]
 
  :deps  {org.clojure/clojure {:mvn/version "1.12.2"}
         com.github.clj-easy/graal-build-time {:mvn/version "1.0.5"}}

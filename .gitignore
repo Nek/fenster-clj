@@ -4,3 +4,4 @@ target
 FenHouse.app
 native/*.dylib
 fenhouse
+resources
