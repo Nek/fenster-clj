@@ -2,7 +2,9 @@
 
 Why JNI (not Panama/FFM)? On Apple Silicon, the GraalVM Native Image toolchain you’re likely using does not support the Foreign Function & Memory (FFM) API in native images for arm64 in a way that works here. JNI is stable on arm64 and works today.
 
----
+## Disclaimer
+
+I don't know C and have used AI to pull this demo together. Still, it looks like a good proof of concept. I learned a lot creating it.
 
 ## Requirements
 
@@ -21,8 +23,6 @@ Why JNI (not Panama/FFM)? On Apple Silicon, the GraalVM Native Image toolchain y
 `demo/sound.clj` (it makes some noise)
 
 <img width="432" height="380" alt="image" src="https://github.com/user-attachments/assets/18d33ae1-4f3b-4ff2-ac0d-86e80ac3a0bf" />
-
----
 
 ## Tools & dependencies
 
