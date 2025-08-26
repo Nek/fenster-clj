@@ -2,6 +2,6 @@
 target
 .DS_Store
 FenHouse.app
-native/*.dylib
+resources/native/
+native/libfen_shim_jni.dylib
 fenhouse
-resources
