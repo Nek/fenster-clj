@@ -1,1 +1,6 @@
 .cpcache
+target
+.DS_Store
+FenHouse.app
+native/*.dylib
+fenhouse

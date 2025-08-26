@@ -1,11 +1,12 @@
 {:paths ["src"]
 
- :deps {org.clojure/clojure {:mvn/version "1.12.2"}
-        org.suskalo/coffi   {:mvn/version "1.0.615"}}
+ :deps  {org.clojure/clojure {:mvn/version "1.12.2"}
+        com.github.clj-easy/graal-build-time {:mvn/version "1.0.5"}}
 
  :aliases
- {:run   {:jvm-opts  ["-XstartOnFirstThread" "--enable-native-access=ALL-UNNAMED"]
-          :main-opts ["-m" "demo.fenhouse"]}
+ {:run   {:extra-paths ["target/classes"]       ;; <-- add this
+          :jvm-opts    ["-XstartOnFirstThread" "-Djava.library.path=./native"]
+          :main-opts   ["-m" "demo.fenhouse"]}
 
   :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}}
           :ns-default build}}}

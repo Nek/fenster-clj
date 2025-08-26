@@ -1,37 +1,21 @@
 (ns demo.fenhouse
-  (:require [coffi.ffi :as ffi :refer [defcfn]]
-            [coffi.mem :as mem])
-  (:import [java.nio ByteBuffer IntBuffer ByteOrder]
-           [java.lang.foreign MemorySegment]
-           [java.util ArrayDeque]))
+  (:gen-class :main true)   ;; <-- add this
+  (:import
+    [java.nio ByteBuffer IntBuffer ByteOrder]
+    [java.util ArrayDeque]
+    [demo FenShim]))
 
-;; Load the shim dylib you built in ./native
-(ffi/load-library "./native/libfen_shim.dylib")
-
-;; Shim FFI (simple handle API)
-(defcfn fen-open  "fen_open"  [::mem/int ::mem/int ::mem/c-string ::mem/pointer] ::mem/pointer)
-(defcfn fen-loop  "fen_loop"  [::mem/pointer] ::mem/int)
-(defcfn fen-close "fen_close" [::mem/pointer] ::mem/void)
-(defcfn fen-key   "fen_key"   [::mem/pointer ::mem/int] ::mem/int)
-(defcfn fen-sleep "fen_sleep" [::mem/int] ::mem/void)
-(defcfn fen-time  "fen_time"  [] ::mem/long)
-
-;; Constants
 (def W 320) (def H 240) (def N (* W H))
 
-;; Pixel helpers (IntBuffer, index = y*W + x), no primitive-dispatch funkiness
 (defn put! [^IntBuffer ib x y color]
   (when (and (<= 0 x) (< x W) (<= 0 y) (< y H))
-    (let [i (int (+ (* y W) x))]
-      (.put ib i (int color)))))
+    (.put ib (int (+ (* y W) x)) (int color))))
 
 (defn get! [^IntBuffer ib x y]
   (if (and (<= 0 x) (< x W) (<= 0 y) (< y H))
-    (let [i (int (+ (* y W) x))]
-      (.get ib i))
+    (.get ib (int (+ (* y W) x)))
     0))
 
-;; Drawing (ports of the C algorithms)
 (defn line! [^IntBuffer ib x0 y0 x1 y1 c]
   (let [dx (Math/abs (int (- x1 x0)))
         sx (if (< x0 x1) 1 -1)
@@ -59,7 +43,6 @@
             (put! ib (+ cx xx) (+ cy yy) c)))))))
 
 (defn flood-fill! [^IntBuffer ib x y old c]
-  ;; iterative stack (avoid recursion limits)
   (when (and (<= 0 x) (< x W) (<= 0 y) (< y H)
              (= (get! ib x y) old))
     (let [^ArrayDeque stack (ArrayDeque.)]
@@ -76,7 +59,6 @@
             (.addLast stack (int-array [px (dec py)]))
             (.addLast stack (int-array [px (inc py)]))))))))
 
-;; 5x3 bitmap font table
 (def font5x3
   (int-array
     [0x0000,0x2092,0x002d,0x5f7d,0x279e,0x52a5,0x7ad6,0x0012,0x4494,0x1491,0x017a,0x05d0,0x1400,0x01c0,0x0400,0x12a4
@@ -98,41 +80,41 @@
                   (rect! ib (+ x (* dx scale)) (+ y0 (* dy scale)) scale scale c))))))
         (recur (+ x (* 4 scale)) (inc i))))))
 
-;; Main
 (defn -main [& _]
-  (with-open [arena (mem/confined-arena)]
-    ;; Native pixel buffer mapped as IntBuffer
-    (let [^MemorySegment pixels (mem/alloc (* N 4) arena) ; N int32 -> N*4 bytes
-          ^ByteBuffer bb (doto (.asByteBuffer pixels) (.order (ByteOrder/nativeOrder)))
-          ^IntBuffer  ib (.asIntBuffer bb)
-          handle (fen-open W H "hello" pixels)]
-      (when (mem/null? handle)
-        (throw (ex-info "fen_open failed" {})))
-      (try
-        (loop [now (long (fen-time))]
-          ;; frame (same visuals as the C sample)
-          (rect!   ib 0 0 W H 0x00333333)
-          (rect!   ib (quot W 4) (quot H 2) (quot W 2) (quot H 3) 0x00ff0000)
-          (rect!   ib (quot W 2) (+ (quot H 2) (quot H 12))
-                      (quot W 6) (- (quot H 3) (quot H 12)) 0x00ffffff)
-          (circle! ib (- (quot W 2) (quot W 8)) (+ (quot H 2) (quot H 6))
-                      (quot W 20) 0x00ffffff)
-          (line!   ib (- (quot W 4) 25) (quot H 2) (quot W 2) (quot H 4) 0x0000ffff)
-          (line!   ib (+ (- W (quot W 4)) 25) (quot H 2) (quot W 2) (quot H 4) 0x0000ffff)
-          (line!   ib (+ (- W (quot W 4)) 25) (quot H 2) (- (quot W 4) 25) (quot H 2) 0x0000ffff)
-          (flood-fill! ib (quot W 2) (quot H 3) 0x00333333 0x00ff00ff)
-          (text! ib 10 10 "House" 8 0x00ffffff)
+  (Class/forName "demo.FenShim")   ;; force static { } to run -> System.load(...)
+  ;; Cocoa needs main OS thread (JVM): use -XstartOnFirstThread via deps.edn alias
+  ;; Create a DIRECT pixel buffer and map to an IntBuffer
+  (let [^ByteBuffer bb (doto (ByteBuffer/allocateDirect (* N 4))
+                         (.order (ByteOrder/nativeOrder)))
+        ^IntBuffer  ib (.asIntBuffer bb)
+        handle (FenShim/fenOpen W H "hello" bb)]
+    (when (zero? handle)
+      (throw (ex-info "fen_open failed" {})))
+    (try
+      (loop [now (long (FenShim/fenTime))]
+        ;; draw frame (same visuals as before)
+        (rect!   ib 0 0 W H 0x00333333)
+        (rect!   ib (quot W 4) (quot H 2) (quot W 2) (quot H 3) 0x00ff0000)
+        (rect!   ib (quot W 2) (+ (quot H 2) (quot H 12))
+                    (quot W 6) (- (quot H 3) (quot H 12)) 0x00ffffff)
+        (circle! ib (- (quot W 2) (quot W 8)) (+ (quot H 2) (quot H 6))
+                    (quot W 20) 0x00ffffff)
+        (line!   ib (- (quot W 4) 25) (quot H 2) (quot W 2) (quot H 4) 0x0000ffff)
+        (line!   ib (+ (- W (quot W 4)) 25) (quot H 2) (quot W 2) (quot H 4) 0x0000ffff)
+        (line!   ib (+ (- W (quot W 4)) 25) (quot H 2) (- (quot W 4) 25) (quot H 2) 0x0000ffff)
+        (flood-fill! ib (quot W 2) (quot H 3) 0x00333333 0x00ff00ff)
+        (text! ib 10 10 "House" 8 0x00ffffff)
 
-          ;; ~60 Hz pacing (sleep the remainder)
-          (let [time (long (fen-time))
-                dt   (- time now)
-                target 16
-                remain (max 0 (- target (int (max 0 dt))))]
-            (when (pos? remain) (fen-sleep remain)))
-          (when (pos? (fen-key handle 27)) ; ESC
-            (throw (ex-info "exit" {:reason :esc})))
-          (when (neg? (fen-loop handle))
-            (throw (ex-info "exit" {:reason :closed})))
-          (recur (long (fen-time))))
-        (finally
-          (fen-close handle))))))
+        ;; ~60 Hz pacing
+        (let [time (long (FenShim/fenTime))
+              dt   (- time now)
+              target 16
+              remain (max 0 (- target (int (max 0 dt))))]
+          (when (pos? remain) (FenShim/fenSleep remain)))
+        (when (pos? (FenShim/fenKey handle 27)) ; ESC
+          (throw (ex-info "exit" {:reason :esc})))
+        (when (neg? (FenShim/fenLoop handle))
+          (throw (ex-info "exit" {:reason :closed})))
+        (recur (long (FenShim/fenTime))))
+      (finally
+        (FenShim/fenClose handle)))))
