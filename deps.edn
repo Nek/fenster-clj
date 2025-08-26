@@ -1,0 +1,15 @@
+{:paths ["src"]
+
+ :deps {org.clojure/clojure {:mvn/version "1.12.2"}
+        org.suskalo/coffi   {:mvn/version "1.0.615"}}
+
+ :aliases
+ {:run
+  {;; macOS/Cocoa needs the first OS thread; FFM needs native access
+   :jvm-opts  ["-XstartOnFirstThread" "--enable-native-access=ALL-UNNAMED"]
+   ;; same as: -M -m demo.fenhouse
+   :main-opts ["-m" "demo.fenhouse"]}
+
+  ;; optional: a REPL with the same JVM opts (handy on macOS)
+  :repl-mac
+  {:jvm-opts ["-XstartOnFirstThread" "--enable-native-access=ALL-UNNAMED"]}}}
